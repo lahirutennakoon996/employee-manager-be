@@ -6,6 +6,10 @@ const { Schema } = mongoose;
 
 const employeeSchema = new Schema(
   {
+    _id: {
+      type: Number,
+      required: true,
+    },
     first_name: {
       type: String,
       required: true,
@@ -26,6 +30,9 @@ const employeeSchema = new Schema(
       type: String,
       required: true,
       enum: Object.values(employeeConfig.gender),
+    },
+    photo: {
+      type: String,
     },
   },
   {
