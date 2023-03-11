@@ -5,4 +5,10 @@ module.exports.permissions = {
   getEmployees: {
     path: '/',
   },
+  updateEmployee: {
+    path: '/:id',
+  },
+  deleteEmployee: {
+    path: '/:id',
+  },
 };

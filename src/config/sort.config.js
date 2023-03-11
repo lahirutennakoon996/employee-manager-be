@@ -5,7 +5,7 @@ module.exports = {
   },
   sortingColumn: {
     employees: {
-      "-1": "updated_at",
+      "-1": "_id",
       0: "first_name",
       1: "last_name",
       2: "email",

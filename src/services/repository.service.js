@@ -36,7 +36,7 @@ module.exports.findOne = async (model, query, projection) => {
  * @param options
  * @returns {Promise<[]>}
  */
-module.exports.findMany = (model, query, projection, options) => {
+module.exports.findMany = async (model, query, projection, options) => {
   return model.find(query, projection, options);
 }
 
@@ -46,7 +46,7 @@ module.exports.findMany = (model, query, projection, options) => {
  * @param query
  * @returns {Promise<unknown>}
  */
-module.exports.findByAggregateQuery = (model, query) => {
+module.exports.findByAggregateQuery = async (model, query) => {
   return model
     .aggregate(query)
     .allowDiskUse(true)
@@ -60,6 +60,16 @@ module.exports.findByAggregateQuery = (model, query) => {
  * @param options
  * @returns {Promise<unknown>}
  */
-module.exports.updateOne = (model, query, body, options) => {
+module.exports.updateOne = async (model, query, body, options) => {
   return model.findOneAndUpdate(query, body, options);
+}
+
+/**
+ * Delete single object
+ * @param {*} model
+ * @param {*} query
+ * @returns
+ */
+module.exports.deleteOne = async (model, query) => {
+  return model.findOneAndDelete(query);
 }

@@ -1,5 +1,5 @@
 const { createDBConnection } = require("../src/services/db-connection.service");
-const {insertMany} = require('../src/services/repository.service');
+const { insertMany } = require('../src/services/repository.service');
 const EmployeeModel = require('../src/modules/employee/employee.model');
 const initialData = require('../data/employees.json');
 
@@ -22,6 +22,8 @@ const populateInitialData = async () => {
 
     // Insert all to db
     await insertMany(EmployeeModel, employees);
+
+    console.log('Migration complete.');
   }
   catch (error) {
     console.error(error);

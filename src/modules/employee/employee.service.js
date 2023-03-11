@@ -2,13 +2,13 @@ const { pathOr } = require("ramda");
 
 const EmployeeModel = require('./employee.model');
 const sortingConfig = require("../../config/sort.config");
-const repository = require('../../services/repository.service');
+const { save, findMany, findByAggregateQuery, updateOne, deleteOne } = require('../../services/repository.service');
 const { setLimitToPositiveValue } = require("../../services/common.service");
 
 /**
  * Create new employee
  * @param body
- * @returns {Promise<*>}
+ * @returns {Promise<Mongoose.Document>}
  */
 module.exports.createEmployee = async (body) => {
   const existingEmployee = await this.getEmployees({
@@ -31,14 +31,14 @@ module.exports.createEmployee = async (body) => {
     ...body,
   });
 
-  return repository.save(newEmployee);
+  return save(newEmployee);
 };
 
 /**
  * Get employee with the maximum _id
  * @returns {Promise<[]>}
  */
-module.exports.getMaxId = async () => repository.findMany(EmployeeModel, {}, {
+module.exports.getMaxId = async () => findMany(EmployeeModel, {}, {
   _id: 1,
   }, {
   sort: { _id: -1},
@@ -46,16 +46,16 @@ module.exports.getMaxId = async () => repository.findMany(EmployeeModel, {}, {
 });
 
 /**
- * Get all employees with pagination and filters
+ * Get employees with pagination, filters, search, sort
  * @param body
- * @returns {Promise<void>}
+ * @returns {Promise<{employees: ([Mongoose.Document]), recordsFiltered: (number), recordsTotal: (number)}>}
  */
 module.exports.getEmployees = async (body) => {
   const {
     limit,
     order,
     page,
-    _id: employeeId,
+    id,
     email,
     search
   } = body;
@@ -71,9 +71,9 @@ module.exports.getEmployees = async (body) => {
     updated_at: -1,
   };
 
-  if (employeeId) {
+  if (id) {
     matchQuery = {
-      _id: +employeeId,
+      _id: +id,
     };
   }
 
@@ -90,7 +90,7 @@ module.exports.getEmployees = async (body) => {
     },
   ];
 
-  recordsTotal = await repository.findByAggregateQuery(EmployeeModel, [
+  recordsTotal = await findByAggregateQuery(EmployeeModel, [
     ...prePaginationQuery,
     { $count: "count" },
   ]);
@@ -107,7 +107,7 @@ module.exports.getEmployees = async (body) => {
   ];
 
   if (!search) {
-    employees = await repository.findByAggregateQuery(EmployeeModel, [
+    employees = await findByAggregateQuery(EmployeeModel, [
       ...prePaginationQuery,
       ...paginationQuery,
     ]);
@@ -126,7 +126,7 @@ module.exports.getEmployees = async (body) => {
       },
     ];
 
-    const data = await repository.findByAggregateQuery(EmployeeModel, [
+    const data = await findByAggregateQuery(EmployeeModel, [
       {
         $facet: {
           employees: [...searchQuery, ...paginationQuery],
@@ -146,4 +146,58 @@ module.exports.getEmployees = async (body) => {
     recordsTotal,
     recordsFiltered,
   };
+}
+
+/**
+ * Update employee
+ * @param body
+ * @returns {Promise<Mongoose.Document>}
+ */
+module.exports.updateEmployee = async (body) => {
+  const { id, email } = body;
+
+  const employeeIdFilter = await this.getEmployees({
+    limit: 1,
+    page: 1,
+    id,
+  });
+
+  // If invalid id
+  if (employeeIdFilter.recordsFiltered === 0) {
+    throw new Error('Invalid employee id.');
+  }
+  
+  // Check if updated email is already taken by another employee
+  if (email) {
+    const employeesEmailFilter = await this.getEmployees({
+      limit: 1,
+      page: 1,
+      email,
+    });
+    
+    if (employeesEmailFilter.recordsFiltered > 0 && +employeesEmailFilter.employees?.[0]?._id !== +id) {
+      throw new Error('Email is already taken.');
+    }
+  }
+
+  return await updateOne(EmployeeModel, {
+    _id: id,
+  }, body, {
+    new: true,
+  });
+}
+
+/**
+ * Delete employee
+ * @param employeeId
+ * @returns {Promise<Mongoose.Document>}
+ */
+module.exports.deleteEmployee = async (employeeId) => {
+  const employee = await deleteOne(EmployeeModel, {
+    _id: employeeId,
+  });
+
+  if (!employee) {
+    throw new Error('Invalid employee id.');
+  }
 }
